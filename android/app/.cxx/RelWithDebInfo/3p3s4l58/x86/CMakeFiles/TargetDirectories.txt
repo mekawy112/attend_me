@@ -1,0 +1,2 @@
+D:/Attendity-main/android/app/.cxx/RelWithDebInfo/3p3s4l58/x86/CMakeFiles/edit_cache.dir
+D:/Attendity-main/android/app/.cxx/RelWithDebInfo/3p3s4l58/x86/CMakeFiles/rebuild_cache.dir

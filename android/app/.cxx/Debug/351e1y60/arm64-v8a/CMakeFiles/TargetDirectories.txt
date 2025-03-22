@@ -1,0 +1,2 @@
+D:/Attendity-main/android/app/.cxx/Debug/351e1y60/arm64-v8a/CMakeFiles/edit_cache.dir
+D:/Attendity-main/android/app/.cxx/Debug/351e1y60/arm64-v8a/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,2 @@
+C:/Users/hom/StudioProjects/Locate-Me-App/android/app/.cxx/Debug/q5x2y2m1/x86/CMakeFiles/edit_cache.dir
+C:/Users/hom/StudioProjects/Locate-Me-App/android/app/.cxx/Debug/q5x2y2m1/x86/CMakeFiles/rebuild_cache.dir

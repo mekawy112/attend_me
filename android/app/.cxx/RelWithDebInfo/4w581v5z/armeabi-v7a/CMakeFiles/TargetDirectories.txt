@@ -1,0 +1,2 @@
+C:/Users/hom/Desktop/AttendMe-main/android/app/.cxx/RelWithDebInfo/4w581v5z/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/hom/Desktop/AttendMe-main/android/app/.cxx/RelWithDebInfo/4w581v5z/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,2 @@
+D:/Attendity-main/android/app/.cxx/RelWithDebInfo/3p3s4l58/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/Attendity-main/android/app/.cxx/RelWithDebInfo/3p3s4l58/armeabi-v7a/CMakeFiles/rebuild_cache.dir
