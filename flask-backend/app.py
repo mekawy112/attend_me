@@ -918,6 +918,38 @@ def verify_location():
             'message': f'Server error: {str(e)}'
         }), 500
 
+@app.route('/attendance/verify', methods=['POST'])
+def verify_attendance():
+    data = request.get_json()
+    student_id = data.get('student_id')
+    course_id = data.get('course_id')
+
+    # Verify GPS and face recognition
+    # Add your logic here...
+
+    return jsonify({'success': True, 'message': 'Attendance verified successfully'})
+
+@app.route('/face/check-registration/<int:student_id>', methods=['GET'])
+def check_face_registration(student_id):
+    student = Student.query.get(student_id)
+    if not student:
+        return jsonify({'isRegistered': False, 'message': 'Student not found'}), 404
+
+    if student.face_registered:
+        return jsonify({'isRegistered': True})
+    else:
+        return jsonify({'isRegistered': False})
+
+@app.route('/attendance/send-to-doctor', methods=['POST'])
+def send_attendance_to_doctor():
+    data = request.get_json()
+    course_id = data.get('course_id')
+
+    # Fetch attendance data and send to the doctor
+    # Add your logic here...
+
+    return jsonify({'success': True, 'message': 'Attendance sent to the doctor'})
+
 def cleanup_database():
     try:
         with app.app_context():
@@ -941,17 +973,7 @@ if __name__ == '__main__':
         # Kill existing connections first
         kill_database_connections()
         
-        # Delete existing database if it exists
-        db_path = os.path.join(basedir, 'database.db')
-        try:
-            if os.path.exists(db_path):
-                os.remove(db_path)
-                logger.info("Existing database removed")
-        except OSError as e:
-            logger.error(f"Error removing database: {e}")
-            # Don't exit, try to continue
-
-        # Initialize database
+        # Initialize database (only creates tables if they don't exist)
         with app.app_context():
             db.create_all()
             logger.info("Database initialized successfully")
@@ -962,6 +984,3 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Application error: {e}")
         raise
-
-    finally:
-        cleanup_database()

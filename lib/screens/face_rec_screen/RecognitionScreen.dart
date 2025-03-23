@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:math';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -13,7 +12,14 @@ import 'ML/Recognition.dart';
 import 'ML/Recognizer.dart';
 
 class RecognitionScreen extends StatefulWidget {
-  const RecognitionScreen({Key? key}) : super(key: key);
+  final Map<String, dynamic>? studentData;
+  final String? studentId;
+
+  const RecognitionScreen({
+    Key? key, 
+    this.studentData,
+    this.studentId,
+  }) : super(key: key);
 
   @override
   State<RecognitionScreen> createState() => _RecognitionScreenState();
@@ -26,7 +32,7 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
   late FaceDetector faceDetector;
   late Recognizer recognizer;
 
-  ui.Image? image; // الصورة لعرضها في الواجهة
+  ui.Image? image; // Image to display in the interface
 
   List<Face> faces = [];
 
@@ -43,7 +49,7 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
     recognizer = Recognizer();
   }
 
-  // التقاط صورة باستخدام الكاميرا
+  // Capture image from camera
   _imgFromCamera() async {
     XFile? pickedFile = await imagePicker.pickImage(source: ImageSource.camera);
     if (pickedFile != null) {
@@ -51,14 +57,14 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
       final data = await _image!.readAsBytes();
       ui.decodeImageFromList(data, (ui.Image img) {
         setState(() {
-          image = img; // تهيئة الصورة لعرضها
+          image = img; // Initialize image for display
           doFaceDetection();
         });
       });
     }
   }
 
-  // التقاط صورة من المعرض
+  // Get image from gallery
   _imgFromGallery() async {
     XFile? pickedFile = await imagePicker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -66,21 +72,21 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
       final data = await _image!.readAsBytes();
       ui.decodeImageFromList(data, (ui.Image img) {
         setState(() {
-          image = img; // تهيئة الصورة لعرضها
+          image = img; // Initialize image for display
           doFaceDetection();
         });
       });
     }
   }
 
-  // دالة الكشف عن الوجوه
+  // Face detection function
   doFaceDetection() async {
-    // إزالة دوران الصورة قبل الكشف
+    // Remove rotation before detection
     await removeRotation(_image!);
 
     InputImage inputImage = InputImage.fromFile(_image!);
 
-    // تمرير الصورة إلى كاشف الوجوه والحصول على الوجوه المكتشفة
+    // Pass the image to face detector and get detected faces
     faces = await faceDetector.processImage(inputImage);
 
     if (faces.isNotEmpty) {
@@ -93,7 +99,7 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
     }
   }
 
-  // قص الوجه واستخراج الـ embedding وإظهار النتيجة
+  // Crop face, extract embedding and show result
   cropAndRegisterFace(Rect boundingBox) {
     num left = boundingBox.left < 0 ? 0 : boundingBox.left;
     num top = boundingBox.top < 0 ? 0 : boundingBox.top;
@@ -115,17 +121,17 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
       height: height.toInt(),
     );
 
-    // استدعاء الدالة التي تنفذ عملية التعرف على الوجه
+    // Call the function that performs face recognition
     Recognition recognition = recognizer.recognize(croppedFace, boundingBox);
 
-    // عرض النتيجة مع إمكانية إعادة التسجيل في حال النتيجة ضعيفة أو خاطئة
+    // Show result with option to re-register if result is weak or incorrect
     showRecognitionResultDialog(
       Uint8List.fromList(img.encodeBmp(croppedFace)),
       recognition,
     );
   }
 
-  // دالة إزالة دوران الصورة (تعدل الصورة على الملف)
+  // Remove rotation function (modifies image on file)
   removeRotation(File inputImage) async {
     final img.Image? capturedImage =
     img.decodeImage(await File(inputImage.path).readAsBytes());
@@ -133,10 +139,10 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
     await File(_image!.path).writeAsBytes(img.encodeJpg(orientedImage));
   }
 
-  // دالة عرض نتيجة التعرف مع إضافة خيار "Register Again" لإعادة التسجيل
+  // Show recognition result with "Register Again" option
   showRecognitionResultDialog(Uint8List croppedFace, Recognition recognition) {
-    // يمكن إضافة شرط على التشابه هنا إذا توافرت قيمة عتبة (threshold)
-    bool isRecognized = recognition.name.isNotEmpty; // أو إضافة شرط للتأكد من تشابه عالي
+    // Can add a threshold condition here if a threshold value is available
+    bool isRecognized = recognition.name.isNotEmpty && recognition.name != "Unknown"; // Or add a condition to ensure high similarity
 
     showDialog(
       context: context,
@@ -160,18 +166,18 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
           ],
         ),
         actions: [
-          // زر "OK" لإغلاق النافذة
+          // "OK" button to close window
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
             },
             child: const Text("OK"),
           ),
-          // زر "Register Again" لإعادة التسجيل وتصحيح الاسم
+          // "Register Again" button to re-register and correct name
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // فتح نافذة التسجيل مع إرسال الوجه المقصوص
+              // Open registration window with cropped face
               showFaceRegistrationDialogue(croppedFace, recognition);
             },
             child: const Text("Register Again"),
@@ -181,9 +187,14 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
     );
   }
 
-  // دالة عرض حوار التسجيل لتصحيح الاسم وإعادة التسجيل
+  // Show registration dialog to correct name and re-register
   TextEditingController textEditingController = TextEditingController();
   showFaceRegistrationDialogue(Uint8List croppedFace, Recognition recognition) {
+    // Pre-populate with student ID if available
+    if (widget.studentId != null) {
+      textEditingController.text = widget.studentId!;
+    }
+    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -203,7 +214,7 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
                   decoration: const InputDecoration(
                     fillColor: Colors.white,
                     filled: true,
-                    hintText: "Enter Name",
+                    hintText: "Enter Name/ID",
                   ),
                 ),
               ),
@@ -238,6 +249,10 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Face Recognition'),
+        backgroundColor: Colors.blue.shade800,
+      ),
       resizeToAvoidBottomInset: false,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -262,14 +277,14 @@ class _RecognitionScreenState extends State<RecognitionScreen> {
           )
               : Container(
             margin: const EdgeInsets.only(top: 100),
-            child: Image.asset(
-              "images/logo.png",
-              width: screenWidth - 100,
-              height: screenWidth - 100,
+            child: Icon(
+              Icons.face,
+              size: screenWidth - 100,
+              color: Colors.blue.shade200,
             ),
           ),
           Container(height: 50),
-          // قسم عرض أزرار التقاط الصور
+          // Image capture buttons section
           Container(
             margin: const EdgeInsets.only(bottom: 50),
             child: Row(

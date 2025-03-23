@@ -8,11 +8,11 @@ class AuthService {
   // Base URL configuration
   static String get baseUrl {
     if (kIsWeb) {
-      return 'http://192.168.1.6:5000';
+      return 'http://192.168.1.68:5000';
     }
     return kDebugMode
-        ? 'http://192.168.1.6:5000' // Android emulator
-        : 'http://192.168.1.6:5000'; // Production
+        ? 'http://192.168.1.68:5000' // Android emulator
+        : 'http://192.168.1.68:5000'; // Production
   }
 
   // Login method

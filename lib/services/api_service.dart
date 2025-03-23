@@ -7,7 +7,7 @@ import '../utils/api_exception.dart';
 class ApiService {
   // For Android Emulator
   static const String baseUrl =
-      'http://192.168.1.6:5000'; // يتصل بالـ Flask server
+      'http://192.168.1.68:5000'; // يتصل بالـ Flask server
 
   Future<List<dynamic>> fetchData() async {
     try {

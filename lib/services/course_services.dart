@@ -6,9 +6,9 @@ class CourseService {
   // Use the same baseUrl pattern as in AuthService
   static String get baseUrl {
     if (kIsWeb) {
-      return 'http://192.168.1.6:5000';
+      return 'http://192.168.1.68:5000';
     }
-    return 'http://192.168.1.6:5000';
+    return 'http://192.168.1.68:5000';
   }
 
   Future<Map<String, dynamic>> getDoctorCourses(dynamic doctorId) async {

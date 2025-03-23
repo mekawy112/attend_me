@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart'; // Add this import
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:locate_me/screens/home_body_screen.dart';
+import 'package:locate_me/screens/home_screen.dart';
 import 'package:locate_me/screens/splash_screen.dart';
 
 import 'package:locate_me/screens/course_detail_screen.dart';
@@ -138,7 +138,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : AttendanceScreen(),
+          : const Placeholder(), // Replace with AttendanceScreen() after defining or importing it
     );
   }
 }

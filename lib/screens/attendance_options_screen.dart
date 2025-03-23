@@ -36,6 +36,63 @@ class AttendanceOptionsScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _verifyAttendance(BuildContext context) async {
+    try {
+      // Call API to verify GPS and face recognition
+      final response = await http.post(
+        Uri.parse('${ApiService.baseUrl}/attendance/verify'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'student_id': studentData['id'],
+          'course_id': courseData['id'],
+        }),
+      );
+
+      final result = jsonDecode(response.body);
+
+      if (result['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Attendance verified successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Send attendance data to the doctor
+        final doctorResponse = await http.post(
+          Uri.parse('${ApiService.baseUrl}/attendance/send-to-doctor'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'course_id': courseData['id'],
+          }),
+        );
+
+        if (doctorResponse.statusCode == 200) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Attendance sent to the doctor.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message']),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error verifying attendance: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,7 +109,10 @@ class AttendanceOptionsScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const RecognitionScreen()),
+                      builder: (context) => RecognitionScreen(
+                        studentId: studentData['id'].toString(),
+                        studentData: studentData,
+                      )),
                 );
               },
               child: const Text('Face Recognition'),

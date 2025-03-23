@@ -14,6 +14,7 @@ class Recognizer {
   final dbHelper = DatabaseHelper();
   Map<String, Recognition> registered = Map();
   String get modelName => 'assets/mobile_face_net.tflite';
+  bool _modelLoaded = false;
 
   Recognizer({int? numThreads}) {
     _interpreterOptions = InterpreterOptions();
@@ -21,32 +22,44 @@ class Recognizer {
     if (numThreads != null) {
       _interpreterOptions.threads = numThreads;
     }
-    loadModel();
-    initDB();
+    
+    // Initialize the model asynchronously
+    _initializeAsync(numThreads);
+  }
+  
+  Future<void> _initializeAsync(int? numThreads) async {
+    await loadModel();
+    await initDB();
+    _modelLoaded = true;
   }
 
-  initDB() async {
+  Future<void> initDB() async {
     await dbHelper.init();
-    loadRegisteredFaces();
+    await loadRegisteredFaces();
+    print("Database initialized with ${registered.length} registered faces");
   }
 
-  void loadRegisteredFaces() async {
+  Future<void> loadRegisteredFaces() async {
     registered.clear();
     final allRows = await dbHelper.queryAllRows();
-    // debugPrint('query all rows:');
+    print("Loading registered faces: ${allRows.length} records found");
+    
     for (final row in allRows) {
-      //  debugPrint(row.toString());
-      print(row[DatabaseHelper.columnName]);
-      String name = row[DatabaseHelper.columnName];
-      List<double> embd = row[DatabaseHelper.columnEmbedding]
-          .split(',')
-          .map((e) => double.parse(e))
-          .toList()
-          .cast<double>();
-      Recognition recognition =
-      Recognition(row[DatabaseHelper.columnName], Rect.zero, embd, 0);
-      registered.putIfAbsent(name, () => recognition);
-      print("R=" + name);
+      try {
+        print("Processing row: ${row[DatabaseHelper.columnName]}");
+        String name = row[DatabaseHelper.columnName];
+        List<double> embd = row[DatabaseHelper.columnEmbedding]
+            .split(',')
+            .map((e) => double.parse(e))
+            .toList()
+            .cast<double>();
+        Recognition recognition =
+        Recognition(row[DatabaseHelper.columnName], Rect.zero, embd, 0);
+        registered.putIfAbsent(name, () => recognition);
+        print("Registered face: $name with ${embd.length} embedding points");
+      } catch (e) {
+        print("Error processing face record: $e");
+      }
     }
   }
 
@@ -64,6 +77,7 @@ class Recognizer {
   Future<void> loadModel() async {
     try {
       interpreter = await Interpreter.fromAsset(modelName);
+      print('Interpreter loaded successfully');
     } catch (e) {
       print('Unable to create interpreter, Caught Exception: ${e.toString()}');
     }
@@ -95,6 +109,12 @@ class Recognizer {
   }
 
   Recognition recognize(img.Image image, Rect location) {
+    //Check if model is loaded
+    if (!_modelLoaded) {
+      print('Model not yet loaded, please wait');
+      return Recognition("Not Ready", location, [], -1);
+    }
+    
     //TODO crop face from image resize it and convert it to float array
     var input = imageToArray(image);
     print(input.shape.toString());
@@ -102,25 +122,37 @@ class Recognizer {
     //TODO output array
     List output = List.filled(1 * 192, 0).reshape([1, 192]);
 
-    //TODO performs inference
-    final runs = DateTime.now().millisecondsSinceEpoch;
-    interpreter.run(input, output);
-    final run = DateTime.now().millisecondsSinceEpoch - runs;
-    print('Time to run inference: $run ms$output');
+    try {
+      //TODO performs inference
+      final runs = DateTime.now().millisecondsSinceEpoch;
+      interpreter.run(input, output);
+      final run = DateTime.now().millisecondsSinceEpoch - runs;
+      print('Time to run inference: $run ms$output');
 
-    //TODO convert dynamic list to double list
-    List<double> outputArray = output.first.cast<double>();
+      //TODO convert dynamic list to double list
+      List<double> outputArray = output.first.cast<double>();
 
-    //TODO looks for the nearest embeeding in the database and returns the pair
-    Pair pair = findNearest(outputArray);
-    print("distance= ${pair.distance}");
+      //TODO looks for the nearest embeeding in the database and returns the pair
+      Pair pair = findNearest(outputArray);
+      print("distance= ${pair.distance}");
 
-    return Recognition(pair.name, location, outputArray, pair.distance);
+      return Recognition(pair.name, location, outputArray, pair.distance);
+    } catch (e) {
+      print('Error in recognition: ${e.toString()}');
+      return Recognition("Error", location, [], -1);
+    }
   }
 
   //TODO  looks for the nearest embeeding in the database and returns the pair which contain information of registered face with which face is most similar
   findNearest(List<double> emb) {
     Pair pair = Pair("Unknown", -5);
+    print("Searching among ${registered.entries.length} registered faces");
+    
+    if (registered.entries.isEmpty) {
+      print("No registered faces found in database!");
+      return pair;
+    }
+    
     for (MapEntry<String, Recognition> item in registered.entries) {
       final String name = item.key;
       List<double> knownEmb = item.value.embeddings;
@@ -130,6 +162,7 @@ class Recognizer {
         distance += diff * diff;
       }
       distance = sqrt(distance);
+      print("Compared with $name: distance = $distance");
       if (pair.distance == -5 || distance < pair.distance) {
         pair.distance = distance;
         pair.name = name;

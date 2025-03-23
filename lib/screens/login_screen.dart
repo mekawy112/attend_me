@@ -2,8 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:locate_me/core/theming/colors.dart';
-import 'package:locate_me/screens/face_rec_screen/HomeScreen.dart'
-    as FaceRecHomeScreen; // Alias this import
+//import 'package:locate_me/screens/face_rec_screen/HomeScreen.dart'
+ //   as FaceRecHomeScreen; // Alias this import
 import 'package:locate_me/screens/signup_screen.dart';
 import 'package:locate_me/services/auth_services.dart';
 import 'package:locate_me/widgets/app_text_form_field.dart';

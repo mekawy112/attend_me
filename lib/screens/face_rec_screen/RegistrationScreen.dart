@@ -5,24 +5,28 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
-import 'package:locate_me/screens/face_rec_screen/DB/DatabaseHelper.dart';
-import 'DB/DatabaseHelper.dart';
+
 import 'ML/Recognition.dart';
 import 'ML/Recognizer.dart';
 
-class RegistrationScreen extends StatefulWidget {
-  final String studentId; // استقبال معرف الطالب
 
-  const RegistrationScreen({Key? key, required this.studentId})
-      : super(key: key);
+class RegistrationScreen extends StatefulWidget {
+  final Map<String, dynamic>? studentData;
+  final String? studentId;
+
+  const RegistrationScreen({
+    Key? key, 
+    this.studentData,
+    this.studentId,
+  }) : super(key: key);
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
-  final dbHelper = DatabaseHelper(); // تعريف dbHelper
   late ImagePicker imagePicker;
+  // قائمة لتخزين الصور الملتقطة
   List<File> capturedImages = [];
   TextEditingController nameController = TextEditingController();
 
@@ -36,16 +40,19 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     super.initState();
     imagePicker = ImagePicker();
 
+    // تهيئة كاشف الوجوه باستخدام خيارات دقيقة
     final options = FaceDetectorOptions(
       performanceMode: FaceDetectorMode.accurate,
     );
     faceDetector = FaceDetector(options: options);
+
+    // تهيئة Recognizer الذي يحمل الموديل وعمليات التعرف
     recognizer = Recognizer();
   }
 
   @override
   void dispose() {
-    faceDetector.close();
+    faceDetector.close(); // إغلاق كاشف الوجوه لتفادي تسرب الذاكرة
     nameController.dispose();
     super.dispose();
   }
@@ -57,8 +64,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       XFile? pickedFile = await imagePicker.pickImage(
         source: ImageSource.camera,
         imageQuality: 80, // تحسين جودة الصورة
-        maxWidth: 1000, // تحديد العرض الأقصى
-        maxHeight: 1000, // تحديد الارتفاع الأقصى
+        maxWidth: 1000,   // تحديد العرض الأقصى
+        maxHeight: 1000,  // تحديد الارتفاع الأقصى
       );
       if (pickedFile != null) {
         setState(() {
@@ -80,8 +87,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       XFile? pickedFile = await imagePicker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80, // تحسين جودة الصورة
-        maxWidth: 1000, // تحديد العرض الأقصى
-        maxHeight: 1000, // تحديد الارتفاع الأقصى
+        maxWidth: 1000,   // تحديد العرض الأقصى
+        maxHeight: 1000,  // تحديد الارتفاع الأقصى
       );
       if (pickedFile != null) {
         setState(() {
@@ -126,10 +133,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
       // حفظ الصورة المؤقتة لمعالجتها بواسطة ML Kit
       final tempDir = Directory.systemTemp;
-      final tempPath =
-          '${tempDir.path}/temp_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final tempFile =
-          await File(tempPath).writeAsBytes(img.encodeJpg(orientedImage));
+      final tempPath = '${tempDir.path}/temp_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final tempFile = await File(tempPath).writeAsBytes(img.encodeJpg(orientedImage));
       final inputImage = InputImage.fromFile(tempFile);
 
       try {
@@ -147,12 +152,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         // التأكد من أن مربع الوجه ضمن حدود الصورة
         int left = boundingBox.left < 0 ? 0 : boundingBox.left.toInt();
         int top = boundingBox.top < 0 ? 0 : boundingBox.top.toInt();
-        int right = boundingBox.right > orientedImage.width
-            ? orientedImage.width - 1
-            : boundingBox.right.toInt();
-        int bottom = boundingBox.bottom > orientedImage.height
-            ? orientedImage.height - 1
-            : boundingBox.bottom.toInt();
+        int right = boundingBox.right > orientedImage.width ? orientedImage.width - 1 : boundingBox.right.toInt();
+        int bottom = boundingBox.bottom > orientedImage.height ? orientedImage.height - 1 : boundingBox.bottom.toInt();
         int width = right - left;
         int height = bottom - top;
 
@@ -162,15 +163,19 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         }
 
         // قص الوجه من الصورة - تصحيح استدعاء الدالة
-        img.Image croppedFace = img.copyCrop(orientedImage,
-            x: left, y: top, width: width, height: height);
+        img.Image croppedFace = img.copyCrop(
+            orientedImage,
+            x: left,
+            y: top,
+            width: width,
+            height: height
+        );
 
         // تحسين حجم الوجه المقصوص للتعرف
         croppedFace = img.copyResize(croppedFace, width: 112, height: 112);
 
         // استخراج الـ embedding باستخدام Recognizer
-        Recognition recognition =
-            recognizer.recognize(croppedFace, boundingBox);
+        Recognition recognition = recognizer.recognize(croppedFace, boundingBox);
         return recognition.embeddings;
       } catch (e) {
         print('Error in face detection or recognition: $e');
@@ -232,9 +237,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         List<double>? emb = await processImageForEmbedding(capturedImages[i]);
         if (emb == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    "Face not detected in image ${i + 1}, please retake.")),
+            SnackBar(content: Text("Face not detected in image ${i+1}, please retake.")),
           );
           setState(() {
             isProcessing = false;
@@ -247,8 +250,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       // حساب المتوسط من الثلاثة embeddings
       List<double> avgEmbedding = averageEmbedding(embeddingsList);
 
-      // تسجيل الوجه في قاعدة البيانات
-      registerFaceInDB(nameController.text, avgEmbedding, widget.studentId);
+      // تسجيل الوجه في قاعدة البيانات باستخدام Recognizer
+      // إزالة كلمة await إذا كانت الدالة لا تعيد Future
+      recognizer.registerFaceInDB(nameController.text, avgEmbedding);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Face Registered Successfully")),
@@ -268,28 +272,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       setState(() {
         isProcessing = false;
       });
-    }
-  }
-
-  // دالة تسجيل الوجه في قاعدة البيانات
-  void registerFaceInDB(
-      String name, List<double> embedding, String studentId) async {
-    try {
-      Map<String, dynamic> row = {
-        DatabaseHelper.columnName: name,
-        DatabaseHelper.columnEmbedding: embedding.join(","),
-        'studentId': studentId,
-      };
-      final id = await dbHelper.insert(row);
-      print('Inserted row id: $id');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Face registered successfully!')),
-      );
-    } catch (e) {
-      print('Error inserting face data into database: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to register face: $e')),
-      );
     }
   }
 
@@ -353,15 +335,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton.icon(
-                    onPressed:
-                        capturedImages.length < 3 ? _pickImageFromCamera : null,
+                    onPressed: capturedImages.length < 3 ? _pickImageFromCamera : null,
                     icon: const Icon(Icons.camera),
                     label: const Text("Camera"),
                   ),
                   ElevatedButton.icon(
-                    onPressed: capturedImages.length < 3
-                        ? _pickImageFromGallery
-                        : null,
+                    onPressed: capturedImages.length < 3 ? _pickImageFromGallery : null,
                     icon: const Icon(Icons.photo),
                     label: const Text("Gallery"),
                   ),
@@ -383,9 +362,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     isProcessing
                         ? const CircularProgressIndicator()
                         : ElevatedButton(
-                            onPressed: registerFace,
-                            child: const Text("Register Face"),
-                          ),
+                      onPressed: registerFace,
+                      child: const Text("Register Face"),
+                    ),
                   ],
                 ),
             ],

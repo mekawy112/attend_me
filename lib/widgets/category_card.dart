@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:locate_me/screens/face_rec_screen/HomeScreen.dart';
+//import 'package:locate_me/screens/face_rec_screen/HomeScreen.dart';
 import 'package:locate_me/screens/student_courses_screen.dart';
 import 'package:locate_me/screens/GPS.dart';
 import 'package:locate_me/screens/doctor_dashboard.dart';
 import 'package:locate_me/services/auth_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+
+import '../screens/face_rec_screen/RegistrationScreen.dart';
 
 class CategoryCard extends StatefulWidget {
   final Map<String, dynamic>? userData;
@@ -148,7 +150,7 @@ class _CategoryCardState extends State<CategoryCard> {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
+                    MaterialPageRoute(builder: (context) => const RegistrationScreen()),
                   );
                 },
               ),
